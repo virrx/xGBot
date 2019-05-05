@@ -1,0 +1,13 @@
+version: "3.2"
+
+services:
+  discordbot:
+    build: .
+    image: discordbot
+    restart: always
+    container_name: discordbot
+    volumes:
+      - type: mount
+        source: ./configs
+        target: /app/configs
+        read_only: true

@@ -4,11 +4,11 @@ const fs = require('fs');
 const RssFeedEmitter = require('rss-feed-emitter');
 const feeder = new RssFeedEmitter();
 
-var config = require('./config.json');
-var roles = require('./roles.json');
-var countWhitelist = require('./countWhitelist.json');
-var colors = require('./colors.json');
-const cooldownConfig = require('./roleCooldowns.json');
+var config = require('./configs/config.json');
+var roles = require('./configs/roles.json');
+var countWhitelist = require('./configs/countWhitelist.json');
+var colors = require('./configs/colors.json');
+const cooldownConfig = require('./configs/roleCooldowns.json');
 
 var guild;
 var countChannel;
@@ -65,7 +65,7 @@ feeder.add({
     url: 'https://xenogamers.com/discover/all.xml/'
 });
 
-client.login('ENTER TOKEN HERE');
+client.login(config.loginToken);
 
 client.on('error', error => console.error(error.message));
 
@@ -101,7 +101,10 @@ client.on('ready', function() {
 
     cooldownConfig.roleIds.forEach(e => {
         cooldowns.push({ name: e.name, roleId: e.id, timeout: null, interval: null, cooldownModifier: 0 });
-        guild.roles.get(e.id).edit({ mentionable: true });
+        var role = guild.roles.get(e.id);
+        if (role) {
+            role.edit({ mentionable: true });
+        }
     });
 });
 
