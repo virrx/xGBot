@@ -10,4 +10,3 @@ services:
       - type: mount
         source: ./configs
         target: /app/configs
-        read_only: true
