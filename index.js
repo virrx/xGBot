@@ -135,6 +135,7 @@ client.on('message', message => {
             guild.roles.get(cd.roleId).edit({ mentionable: false })
                 .then(updated => console.log(`Updated role ${updated.name} to be unmentionable.`))
                 .catch(console.error);
+            message.channel.send(`${cd.name} cooldown is now ${cooldownConfig.baseMinutes + (cd.cooldownModifier * cooldownConfig.intervalMinutes)} minutes.`);
             
             clearInterval(cd.interval);
             clearTimeout(cd.timeout);
