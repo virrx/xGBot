@@ -65,9 +65,11 @@ feeder.add({
     url: 'https://xenogamers.com/discover/all.xml/'
 });
 
-client.login(config.loginToken);
+client.login(config.loginToken)
+    .then(console.log)
+    .catch(console.error);
 
-client.on('error', error => console.error(error.message));
+client.on('error', error => console.error(`CLIENT ERROR: ${error.message}`));
 
 let cooldowns = [];
 
@@ -103,7 +105,9 @@ client.on('ready', function() {
         cooldowns.push({ name: e.name, roleId: e.id, timeout: null, interval: null, cooldownModifier: 0 });
         var role = guild.roles.get(e.id);
         if (role) {
-            role.edit({ mentionable: true });
+            role.edit({ mentionable: true })
+                .then(updated => console.log(`Initialized role ${updated.name} to be mentionable.`))
+                .catch(console.error);
         }
     });
 });
@@ -128,14 +132,18 @@ client.on('message', message => {
 
         if(message.mentions.roles.has(cd.roleId)) {
             console.log(`Message mentioned ${cd.name}, had cooldownModifier ${cd.cooldownModifier}`);
-            guild.roles.get(cd.roleId).edit({ mentionable: false });
+            guild.roles.get(cd.roleId).edit({ mentionable: false })
+                .then(updated => console.log(`Updated role ${updated.name} to be unmentionable.`))
+                .catch(console.error);
             
             clearInterval(cd.interval);
             clearTimeout(cd.timeout);
             let delay = 60 * 1000 * (cooldownConfig.baseMinutes + (cd.cooldownModifier * cooldownConfig.intervalMinutes));
             cd.timeout = setTimeout(cd => {
                 console.log(`Re enabling mentioning for ${cd.name}, modifier ${cd.cooldownModifier}`);
-                guild.roles.get(cd.roleId).edit({ mentionable: true });
+                guild.roles.get(cd.roleId).edit({ mentionable: true })
+                    .then(updated => console.log(`Updated role ${updated.name} to be mentionable.`))
+                    .catch(console.error);
 
                 console.log(`Setting interval for ${cooldownConfig.baseMinutes}`);
                 clearInterval(cd.interval);
