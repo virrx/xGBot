@@ -65,11 +65,9 @@ feeder.add({
     url: 'https://xenogamers.com/discover/all.xml/'
 });
 
-client.login(config.loginToken)
-    .then(console.log)
-    .catch(console.error);
+client.login(config.loginToken);
 
-client.on('error', error => console.error(`CLIENT ERROR: ${error.message}`));
+client.on('error', error => console.error(error.message));
 
 let cooldowns = [];
 
@@ -105,9 +103,7 @@ client.on('ready', function() {
         cooldowns.push({ name: e.name, roleId: e.id, timeout: null, interval: null, cooldownModifier: 0 });
         var role = guild.roles.get(e.id);
         if (role) {
-            role.edit({ mentionable: true })
-                .then(updated => console.log(`Initialized role ${updated.name} to be mentionable.`))
-                .catch(console.error);
+            role.edit({ mentionable: true });
         }
     });
 });
@@ -132,19 +128,14 @@ client.on('message', message => {
 
         if(message.mentions.roles.has(cd.roleId)) {
             console.log(`Message mentioned ${cd.name}, had cooldownModifier ${cd.cooldownModifier}`);
-            guild.roles.get(cd.roleId).edit({ mentionable: false })
-                .then(updated => console.log(`Updated role ${updated.name} to be unmentionable.`))
-                .catch(console.error);
+            guild.roles.get(cd.roleId).edit({ mentionable: false });
             message.channel.send(`${cd.name} cooldown is now ${cooldownConfig.baseMinutes + (cd.cooldownModifier * cooldownConfig.intervalMinutes)} minutes.`);
-            
             clearInterval(cd.interval);
             clearTimeout(cd.timeout);
             let delay = 60 * 1000 * (cooldownConfig.baseMinutes + (cd.cooldownModifier * cooldownConfig.intervalMinutes));
             cd.timeout = setTimeout(cd => {
                 console.log(`Re enabling mentioning for ${cd.name}, modifier ${cd.cooldownModifier}`);
-                guild.roles.get(cd.roleId).edit({ mentionable: true })
-                    .then(updated => console.log(`Updated role ${updated.name} to be mentionable.`))
-                    .catch(console.error);
+                guild.roles.get(cd.roleId).edit({ mentionable: true });
 
                 console.log(`Setting interval for ${cooldownConfig.baseMinutes}`);
                 clearInterval(cd.interval);
@@ -166,7 +157,7 @@ client.on('message', message => {
     });
 });
 
-client.on('message', function(message) {
+client.on('message', async message => {
     if(message.author.id == client.user.id) {
         if(message.embeds.length > 0) {
             if(message.embeds[0].description == 'React to get a role!') { // if message is our role message
@@ -192,22 +183,75 @@ client.on('message', function(message) {
     } else {
         if(message.channel.id == config.colorChannelID && message.author.id != client.user.id) {
             message.delete();
+            var guildAuthor = guild.members.get(message.author.id);
             if(message.content.startsWith('!color ')) {
                 var color = message.content.split(' ').slice(1).join('').toLowerCase();
+                var hexRole = guildAuthor.roles.find(role => /^#[0-9A-F]{6}$/i.test(role.name));
                 if(colors.hasOwnProperty(color)) {
-                    var guildAuthor = guild.members.get(message.author.id);
+                    if(hexRole !== null) {
+                        if(hexRole.members.size <= 1) hexRole.delete();
+                        guildAuthor.removeRole(hexRole);
+                    }
                     if(guildAuthor.roles.every(checkNoColor)) {
                         guildAuthor.addRole(colors[color].id);
                     } else {
                         var oldColor = guildAuthor.roles.find(role => colors.hasOwnProperty(role.name.replace(' ', '').toLowerCase()));
+                        await guildAuthor.removeRole(oldColor.id);
+                        await guildAuthor.addRole(colors[color].id);
+                    }
+                } else if(/^#[0-9A-F]{6}$/i.test(color) && guildAuthor.roles.has(config.boosterRoleID)) {
+                    var authorRole = guildAuthor.roles.find(role => /^#[0-9A-F]{6}$/i.test(role.name));
+                    var existingRole = guild.roles.find(role => role.name == color);
+                    if(!guildAuthor.roles.every(checkNoColor)) {
+                        var oldColor = guildAuthor.roles.find(role => colors.hasOwnProperty(role.name.replace(' ', '').toLowerCase()));
                         guildAuthor.removeRole(oldColor.id);
-                        guildAuthor.addRole(colors[color].id);
+                    }
+                    if(authorRole !== null) {
+                        if(authorRole.name != color) {
+                            if(existingRole !== null) {
+                                guildAuthor.addRole(existingRole);
+                                if(authorRole.members.size <= 1) {
+                                    authorRole.delete();
+                                } else {
+                                    guildAuthor.removeRole(authorRole);
+                                }
+                            } else {
+                                if(authorRole.members.size <= 1) {
+                                    authorRole.edit({
+                                        name: color,
+                                        color: color
+                                    });
+                                } else {
+                            		var newRole = guild.createRole({
+                                        name: color,
+                                        color: color,
+                                        position: guild.roles.size - 9
+                                    })/*.then(guildAuthor.addRole(newRole))*/.catch(console.error);
+                                    guildAuthor.removeRole(authorRole).catch(console.error);
+                                }
+                            }
+                        } else {
+                            var sent = await message.reply('you already have this role.');
+                            setTimeout(async () => {
+                                await sent.delete();
+                            }, 5000);
+                        }
+                    } else {
+                        if(existingRole !== null) {
+                            guildAuthor.addRole(existingRole);
+                        } else {
+                    		var newRole = guild.createRole({
+                                name: color,
+                                color: color,
+                                position: guild.roles.size - 9
+                            })/*.then(guildAuthor.addRole(newRole))*/.catch(console.error);
+                        }
                     }
                 } else {
-                    message.reply(`invalid color.`)
-                        .then(sent => setTimeout(function() {
-                            sent.delete();
-                        }, 5000));
+                    var sent = await message.reply(`invalid color.`)
+                    setTimeout(async () => {
+                        await sent.delete();
+                    }, 5000);
                 }
             } else if(message.content == '!removecolor') {
                 var guildAuthor = guild.members.get(message.author.id);
@@ -252,7 +296,7 @@ client.on('guildMemberRemove', function() {
 
 client.on('guildMemberUpdate', function(oldMember, newMember) {
     updateCount();
-    if(newMember.roles.exists('name', 'Normie') && (newMember.roles.exists('name', 'Member') || newMember.roles.exists('name', 'Friend of xG'))) {
+    if(newMember.roles.some(role => role.name == 'Normie' && role.name == 'Member' || role.name == 'Friend of xG')) {
         newMember.removeRole('553963765641641994')
     }
 });
@@ -350,8 +394,16 @@ function checkNoColor(role) {
     return (!colors.hasOwnProperty(role.name.replace(' ', '').toLowerCase()));
 }
 
+function checkHexRole(role) {
+    return /^#[0-9A-F]{6}$/i.test(role.name);
+}
+
 var sortByProperty = function (property) {
     return function (x, y) {
         return ((x[property] === y[property]) ? 0 : ((x[property] > y[property]) ? -1 : 1));
     };
 };
+
+function timeout(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+}
