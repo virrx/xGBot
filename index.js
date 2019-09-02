@@ -222,11 +222,11 @@ client.on('message', async message => {
                                         color: color
                                     });
                                 } else {
-                            		var newRole = guild.createRole({
+                                    var newRole = guild.createRole({
                                         name: color,
                                         color: color,
                                         position: guild.roles.size - 9
-                                    })/*.then(guildAuthor.addRole(newRole))*/.catch(console.error);
+                                    }).then(guildAuthor.addRole(newRole)).catch(console.error);
                                     guildAuthor.removeRole(authorRole).catch(console.error);
                                 }
                             }
@@ -240,11 +240,11 @@ client.on('message', async message => {
                         if(existingRole !== null) {
                             guildAuthor.addRole(existingRole);
                         } else {
-                    		var newRole = guild.createRole({
+                            var newRole = guild.createRole({
                                 name: color,
                                 color: color,
                                 position: guild.roles.size - 9
-                            })/*.then(guildAuthor.addRole(newRole))*/.catch(console.error);
+                            }).then(guildAuthor.addRole(newRole)).catch(console.error);
                         }
                     }
                 } else {
@@ -258,6 +258,9 @@ client.on('message', async message => {
                 if(!guildAuthor.roles.every(checkNoColor)) {
                     var oldColor = guildAuthor.roles.find(role => colors.hasOwnProperty(role.name.replace(' ', '').toLowerCase()));
                     guildAuthor.removeRole(oldColor.id);
+                } else if(guildAuthor.roles.every(checkNoHexRole)) {
+                    var hexRole = guildAuthor.roles.find(role => /^#[0-9A-F]{6}$/i.test(role.name));
+                    guildAuthor.removeRole(hexRole.id);
                 } else {
                     message.reply('you have no colors.')
                         .then(sent => setTimeout(function() {
@@ -394,8 +397,8 @@ function checkNoColor(role) {
     return (!colors.hasOwnProperty(role.name.replace(' ', '').toLowerCase()));
 }
 
-function checkHexRole(role) {
-    return /^#[0-9A-F]{6}$/i.test(role.name);
+function checkNoHexRole(role) {
+    return !(/^#[0-9A-F]{6}$/i.test(role.name));
 }
 
 var sortByProperty = function (property) {
