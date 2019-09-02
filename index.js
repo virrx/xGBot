@@ -275,7 +275,9 @@ client.on('message', async message => {
 client.on('messageReactionAdd', function(reaction, user) {
     if(user != client.user && reaction.message.id == config.roleMessageID) {
         var guildUser = guild.members.get(user.id);
-        guildUser.addRole(roles[`<:${reaction.emoji.identifier}>`].role);
+        var role = roles[`<:${reaction.emoji.identifier}>`];
+        if (guildUser != null && role != null)
+            guildUser.addRole(roles[`<:${reaction.emoji.identifier}>`].role);
     }
 });
 
