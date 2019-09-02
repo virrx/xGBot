@@ -6,7 +6,7 @@
   "author": "Segal",
   "license": "ISC",
   "dependencies": {
-    "discord.js": "^11.4.2",
+    "discord.js": "^11.5.1",
     "rss-feed-emitter": "^2.0.1"
   },
   "scripts": {
