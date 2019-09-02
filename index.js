@@ -276,16 +276,20 @@ client.on('messageReactionAdd', function(reaction, user) {
     if(user != client.user && reaction.message.id == config.roleMessageID) {
         var guildUser = guild.members.get(user.id);
         var role = roles[`<:${reaction.emoji.identifier}>`];
-        if (guildUser != null && role != null)
+        if (guildUser != null && role != null) {
             guildUser.addRole(roles[`<:${reaction.emoji.identifier}>`].role);
+        }
     }
 });
 
 client.on('messageReactionRemove', function(reaction, user) {
     if(reaction.message.id == config.roleMessageID) {
         var guildUser = guild.members.get(user.id);
-        if(guildUser.roles.filter(role => role.id == roles[`<:${reaction.emoji.identifier}>`].role).size > 0) { //gross way of making sure they have the role already
-            guildUser.removeRole(roles[`<:${reaction.emoji.identifier}>`].role);
+        var role = roles[`<:${reaction.emoji.identifier}>`];
+        if (guildUser != null && role != null) {
+            if(guildUser.roles.filter(r => r.id == role.role).size > 0) { //gross way of making sure they have the role already
+                guildUser.removeRole(roles[`<:${reaction.emoji.identifier}>`].role);
+            }
         }
     }
 });
